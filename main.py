@@ -23,9 +23,14 @@ batch_size = 32
 num_epochs = 2
 #################################
 ###CONFLICT ZONE 1
-transformImg = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
-                                               torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
+if args.mode == 1:
+    # CNN
+    transformImg = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
+                                                   torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+else:
+    # FCNN
+    transformImg = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
+                                                   ])
 #################################
 train_dataset = torchvision.datasets.MNIST(root='../../data',
                                            train=True,
@@ -45,8 +50,12 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                           shuffle=False)
 ##################################
 ###CONFLICT ZONE 2
-model = LeNet5()
+FC_model = FCNet()
+CN_model = LeNet5()
 ##################################
 criterion = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum = 0.9)
+if args.mode == 0:
+    optimizer = torch.optim.SGD(FC_model.parameters(), lr=0.001, momentum = 0.9)
+if args.mode == 1:
+    optimizer = torch.optim.SGD(CN_model.parameters(), lr=0.001, momentum=0.9)
 training_accuracy = []
