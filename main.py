@@ -50,12 +50,80 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                           shuffle=False)
 ##################################
 ###CONFLICT ZONE 2
-FC_model = FCNet()
-CN_model = LeNet5()
+if args.mode == 0:
+    model = FCNet()
+else:
+    #catch case -- or should we limit the argparser to just 0 and 1
+    model = LeNet5()
 ##################################
 criterion = nn.CrossEntropyLoss()
-if args.mode == 0:
-    optimizer = torch.optim.SGD(FC_model.parameters(), lr=0.001, momentum = 0.9)
-if args.mode == 1:
-    optimizer = torch.optim.SGD(CN_model.parameters(), lr=0.001, momentum=0.9)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum = 0.9)
 training_accuracy = []
+
+for epoch in range(num_epochs):
+    print("Epoch:", epoch)
+    for batch_num, train_batch in enumerate(train_loader):
+        images, labels = train_batch
+        ############################
+        if args.mode == 0:
+            #FCNN
+            inputs = Variable(images.reshape(-1, 28*28))
+        else:
+            inputs = Variable(images.reshape(-1, 1,28*28))
+        ############################
+        targets = Variable(labels)
+        optimizer.zero_grad()
+        output = model(inputs)
+        loss = criterion(output, labels)
+        loss.backward()
+        optimizer.step()
+
+    accuracy = 0.0
+    num_batches = 0
+    for batch_num, training_batch in enumerate(train_loader):
+        num_batches += 1
+        images, labels = training_batch
+        ##############################
+        if args.mode == 0:
+            #FCNN
+            inputs = Variable(images.reshape(-1, 28*28))
+        else:
+            inputs = Variable(images.reshape(-1, 1,28*28))
+        ##############################
+        targets = labels.numpy()
+        inputs = Variable(inputs)
+        outputs = model(inputs)
+        outputs = outputs.data.numpy()
+        predictions = np.argmax(outputs, axis = 1)
+        accuracy += accuracy_score(targets, predictions)
+        final_acc = accuracy/num_batches
+        training_accuracy.append(final_acc)
+
+    print("Epoch: {} Training Accuracy: {}".format(epoch, final_acc*100))
+
+
+
+## test on testing dataset
+
+with torch.no_grad():
+    correct = 0
+    total = 0
+    for test_batch in test_loader:
+        images, labels = test_batch
+        ###########################
+        if args.mode == 0:
+            #FCNN
+            images = images.reshape(-1, 28*28)
+        else:
+            images = images.reshape(-1, 1, 28, 28)
+        ###########################
+        labels = labels
+        outputs = model(images)
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+    print('Accuracy of the network on the 10000 test images: {} %'.format(100 * correct / total))
+
+
+##OPTIONAL display epochs and accuracy using Matplotlib
