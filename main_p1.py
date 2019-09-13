@@ -2,9 +2,11 @@
 import argparse
 
 #THIRD PARTY IMPORTS
+import torch
 import numpy as np
 import torch.nn as nn
 import torch.optim
+import torchvision.datasets
 import torchvision.transforms
 from torch.autograd import Variable
 from sklearn.metrics import accuracy_score
@@ -21,14 +23,8 @@ batch_size = 32
 num_epochs = 2
 #################################
 ###CONFLICT ZONE 1
-if args.mode == 1:
-    # CNN
-    transformImg = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
-                                                   torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-else:
-    # FCNN
-    transformImg = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
-                                                   ])
+transformImg = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
+                                               ])
 #################################
 train_dataset = torchvision.datasets.MNIST(root='../../data',
                                            train=True,
@@ -48,11 +44,7 @@ test_loader = torch.utils.data.DataLoader(dataset=test_dataset,
                                           shuffle=False)
 ##################################
 ###CONFLICT ZONE 2
-if args.mode == 0:
-    model = FCNet()
-else:
-    #catch case -- or should we limit the argparser to just 0 and 1
-    model = LeNet5()
+model = FCNet()
 ##################################
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum = 0.9)
@@ -63,11 +55,7 @@ for epoch in range(num_epochs):
     for batch_num, train_batch in enumerate(train_loader):
         images, labels = train_batch
         ############################
-        if args.mode == 0:
-            #FCNN
-            inputs = Variable(images.reshape(-1, 28*28))
-        else:
-            inputs = Variable(images.reshape(-1, 1,28*28))
+        inputs = Variable(images.reshape(-1, 28*28))
         ############################
         targets = Variable(labels)
         optimizer.zero_grad()
@@ -76,17 +64,13 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
 
-    accuracy = 0.0
-    num_batches = 0
+        accuracy = 0.0
+        num_batches = 0
     for batch_num, training_batch in enumerate(train_loader):
         num_batches += 1
         images, labels = training_batch
         ##############################
-        if args.mode == 0:
-            #FCNN
-            inputs = Variable(images.reshape(-1, 28*28))
-        else:
-            inputs = Variable(images.reshape(-1, 1,28*28))
+        inputs = Variable(images.reshape(-1, 28*28))
         ##############################
         targets = labels.numpy()
         inputs = Variable(inputs)
@@ -109,11 +93,7 @@ with torch.no_grad():
     for test_batch in test_loader:
         images, labels = test_batch
         ###########################
-        if args.mode == 0:
-            #FCNN
-            images = images.reshape(-1, 28*28)
-        else:
-            images = images.reshape(-1, 1, 28, 28)
+        images = images.reshape(-1, 28*28)
         ###########################
         labels = labels
         outputs = model(images)
@@ -122,6 +102,8 @@ with torch.no_grad():
         correct += (predicted == labels).sum().item()
 
     print('Accuracy of the network on the 10000 test images: {} %'.format(100 * correct / total))
+
+
 
 
 ##OPTIONAL display epochs and accuracy using Matplotlib
